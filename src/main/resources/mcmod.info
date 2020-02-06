@@ -1,14 +1,14 @@
 [
 {
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "Example placeholder mod.",
+  "modid": "subtitles_mod",
+  "name": "Backported Subtitles",
+  "description": "Backports the 1.9 subtitle accessibility feature to 1.8.",
   "version": "${version}",
   "mcversion": "${mcversion}",
   "url": "",
   "updateUrl": "",
-  "authorList": ["ExampleDude"],
-  "credits": "The Forge and FML guys, for making this example",
+  "authorList": ["Sk1er"],
+  "credits": "@PoofessorP for requesting this.",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
