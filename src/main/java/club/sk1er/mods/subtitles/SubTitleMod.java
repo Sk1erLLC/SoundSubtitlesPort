@@ -2,6 +2,7 @@ package club.sk1er.mods.subtitles;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
+import net.minecraft.client.resources.SimpleReloadableResourceManager;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -23,6 +24,7 @@ public class SubTitleMod {
     public void init(FMLInitializationEvent event) {
         guiSubtitleOverlay = new GuiSubtitleOverlay(Minecraft.getMinecraft());
         MinecraftForge.EVENT_BUS.register(this);
+        ((SimpleReloadableResourceManager) Minecraft.getMinecraft().getResourceManager()).registerReloadListener(guiSubtitleOverlay);
     }
 
     @SubscribeEvent

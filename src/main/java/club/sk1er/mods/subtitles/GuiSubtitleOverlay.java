@@ -1,17 +1,24 @@
 package club.sk1er.mods.subtitles;
 
 import com.google.common.collect.Lists;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.sun.javafx.geom.Vec3d;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
+import net.minecraft.client.audio.SoundList;
+import net.minecraft.client.audio.SoundListSerializer;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraft.client.renderer.GlStateManager;
+import net.minecraft.client.resources.IResource;
+import net.minecraft.client.resources.IResourceManager;
+import net.minecraft.client.resources.IResourceManagerReloadListener;
 import net.minecraft.util.MathHelper;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Vec3;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.apache.commons.io.IOUtils;
@@ -20,16 +27,34 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class GuiSubtitleOverlay extends Gui {
+public class GuiSubtitleOverlay extends Gui implements IResourceManagerReloadListener {
+    private static final Gson GSON = (new GsonBuilder()).registerTypeAdapter(SoundList.class, new SoundListSerializer()).create();
+    private static final ParameterizedType TYPE = new ParameterizedType() {
+        public Type[] getActualTypeArguments() {
+            return new Type[]{String.class, SoundList.class};
+        }
+
+        public Type getRawType() {
+            return Map.class;
+        }
+
+        public Type getOwnerType() {
+            return null;
+        }
+    };
     private final Minecraft client;
     private final List<Subtitle> subtitles = Lists.newArrayList();
-    private HashMap<String, String> soundToSub = new HashMap<>();
-    private HashMap<String, String> subToLang = new HashMap<>();
+    private final HashMap<String, String> soundToSub = new HashMap<>();
+    private final HashMap<String, String> subToLang = new HashMap<>();
+    private final HashMap<String, String> locationToSound = new HashMap<>();
 
     public GuiSubtitleOverlay(Minecraft clientIn) {
         this.client = clientIn;
@@ -40,12 +65,26 @@ public class GuiSubtitleOverlay extends Gui {
                 if (entry.getValue().isJsonObject()) {
                     JsonObject asJsonObject = entry.getValue().getAsJsonObject();
                     if (asJsonObject.has("subtitle")) {
-                        soundToSub.put(entry.getKey(), asJsonObject.get("subtitle").getAsString());
+                        String subTitle = asJsonObject.get("subtitle").getAsString();
+                        if (asJsonObject.has("sounds")) {
+                            for (JsonElement sounds : asJsonObject.get("sounds").getAsJsonArray()) {
+                                String asString;
+                                if (!sounds.isJsonPrimitive()) {
+                                    JsonObject asJsonObject1 = sounds.getAsJsonObject();
+                                    if (asJsonObject1.has("name")) {
+                                        asString = asJsonObject1.get("name").getAsString();
+                                    } else continue;
+                                } else
+                                    asString = sounds.getAsString();
+                                asString = asString.replaceAll("\\d+", "");
+                                System.out.println("sound to sub: " + asString + " -> " + subTitle);
+                                soundToSub.put(asString, subTitle);
+                                break;
+                            }
+                        }
                     }
                 }
             }
-
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -65,6 +104,43 @@ public class GuiSubtitleOverlay extends Gui {
         }
     }
 
+    protected Map<String, SoundList> getSoundMap(InputStream stream) {
+        Map map;
+
+        try {
+            map = (Map) GSON.fromJson((Reader) (new InputStreamReader(stream)), TYPE);
+        } finally {
+            IOUtils.closeQuietly(stream);
+        }
+
+        return map;
+    }
+
+    public void onResourceManagerReload(IResourceManager resourceManager) {
+        for (String s : resourceManager.getResourceDomains()) {
+            try {
+                for (IResource iresource : resourceManager.getAllResources(new ResourceLocation(s, "sounds.json"))) {
+                    try {
+                        Map<String, SoundList> map = this.getSoundMap(iresource.getInputStream());
+
+                        for (Map.Entry<String, SoundList> set : map.entrySet()) {
+                            for (SoundList.SoundEntry soundEntry : set.getValue().getSoundList()) {
+                                String soundEntryName = soundEntry.getSoundEntryName().replaceAll("\\d+", "");
+
+                                System.out.println("Location to sound: " + set.getKey() + " -> " + soundEntryName);
+                                this.locationToSound.put(set.getKey(), soundEntryName);
+                                break;
+                            }
+                        }
+                    } catch (RuntimeException ignored) {
+                    }
+                }
+            } catch (IOException ignored) {
+                ;
+            }
+        }
+    }
+
     private String read(InputStream stream) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
         StringBuilder stringBuilder = new StringBuilder();
@@ -75,23 +151,6 @@ public class GuiSubtitleOverlay extends Gui {
         return stringBuilder.toString();
     }
 
-    public Vec3d rotatePitch(Vec3d input, float pitch) {
-        float f = MathHelper.cos(pitch);
-        float f1 = MathHelper.sin(pitch);
-        double d0 = input.x;
-        double d1 = input.y * (double) f + input.z * (double) f1;
-        double d2 = input.z * (double) f - input.y * (double) f1;
-        return new Vec3d(d0, d1, d2);
-    }
-
-    public Vec3d rotateYaw(Vec3d input, float yaw) {
-        float f = MathHelper.cos(yaw);
-        float f1 = MathHelper.sin(yaw);
-        double d0 = input.x * (double) f + input.z * (double) f1;
-        double d1 = input.y;
-        double d2 = input.z * (double) f - input.x * (double) f1;
-        return new Vec3d(d0, d1, d2);
-    }
 
     public void renderSubtitles(ScaledResolution resolution) {
 
@@ -99,18 +158,16 @@ public class GuiSubtitleOverlay extends Gui {
             GlStateManager.pushMatrix();
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
-            Vec3d vec3d = new Vec3d(this.client.thePlayer.posX, this.client.thePlayer.posY + (double) this.client.thePlayer.getEyeHeight(), this.client.thePlayer.posZ);
-            Vec3d vec3d1 = rotateYaw(rotatePitch((new Vec3d(0.0D, 0.0D, -1.0D)), -this.client.thePlayer.rotationPitch * 0.017453292F), -this.client.thePlayer.rotationYaw * 0.017453292F);
-            Vec3d vec3d2 = rotateYaw(rotatePitch((new Vec3d(0.0D, 1.0D, 0.0D)), -this.client.thePlayer.rotationPitch * 0.017453292F), -this.client.thePlayer.rotationYaw * 0.017453292F);
-            Vec3d vec3d3 = new Vec3d();
-            vec3d3.cross(vec3d1, vec3d2); //sets to cross product
+            Vec3 Vec3 = new Vec3(this.client.thePlayer.posX, this.client.thePlayer.posY + (double)this.client.thePlayer.getEyeHeight(), this.client.thePlayer.posZ);
+            Vec3 Vec31 = (new Vec3(0.0D, 0.0D, -1.0D)).rotatePitch(-this.client.thePlayer.rotationPitch * 0.017453292F).rotateYaw(-this.client.thePlayer.rotationYaw * 0.017453292F);
+            Vec3 Vec32 = (new Vec3(0.0D, 1.0D, 0.0D)).rotatePitch(-this.client.thePlayer.rotationPitch * 0.017453292F).rotateYaw(-this.client.thePlayer.rotationYaw * 0.017453292F);
+            Vec3 Vec33 = Vec31.crossProduct(Vec32);
             int i = 0;
             int j = 0;
-            Iterator<Subtitle> iterator = this.subtitles.iterator();
+            Iterator iterator = this.subtitles.iterator();
 
-            while (iterator.hasNext()) {
-                GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle = iterator.next();
-
+            while(iterator.hasNext()) {
+                GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle = (GuiSubtitleOverlay.Subtitle)iterator.next();
                 if (guisubtitleoverlay$subtitle.getStartTime() + 3000L <= Minecraft.getSystemTime()) {
                     iterator.remove();
                 } else {
@@ -120,28 +177,26 @@ public class GuiSubtitleOverlay extends Gui {
 
             j = j + this.client.fontRendererObj.getStringWidth("<") + this.client.fontRendererObj.getStringWidth(" ") + this.client.fontRendererObj.getStringWidth(">") + this.client.fontRendererObj.getStringWidth(" ");
 
-            for (GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle1 : this.subtitles) {
+            for(Iterator var26 = this.subtitles.iterator(); var26.hasNext(); ++i) {
+                GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle1 = (GuiSubtitleOverlay.Subtitle)var26.next();
                 int k = 255;
                 String s = guisubtitleoverlay$subtitle1.getString();
-                Vec3d location = guisubtitleoverlay$subtitle1.getLocation();
-                location.sub(vec3d);
-                location.normalize();
-                double d0 = -vec3d3.dot(location);
-                double d1 = -vec3d1.dot(location);
+                Vec3 Vec34 = guisubtitleoverlay$subtitle1.getLocation().subtract(Vec3).normalize();
+                double d0 = -Vec33.dotProduct(Vec34);
+                double d1 = -Vec31.dotProduct(Vec34);
                 boolean flag = d1 > 0.5D;
                 int l = j / 2;
                 int i1 = this.client.fontRendererObj.FONT_HEIGHT;
                 int j1 = i1 / 2;
                 float f = 1.0F;
                 int k1 = this.client.fontRendererObj.getStringWidth(s);
-                int l1 = MathHelper.floor_double(MathHelper.denormalizeClamp(255.0D, 75.0D, (double) ((float) (Minecraft.getSystemTime() - guisubtitleoverlay$subtitle1.getStartTime()) / 3000.0F)));
+                int l1 = MathHelper.floor_double(MathHelper.denormalizeClamp(255.0D, 75.0D, (double)((float)(Minecraft.getSystemTime() - guisubtitleoverlay$subtitle1.getStartTime()) / 3000.0F)));
                 int i2 = l1 << 16 | l1 << 8 | l1;
                 GlStateManager.pushMatrix();
-                GlStateManager.translate((float) resolution.getScaledWidth() - (float) l * f - 2.0F, (float) (resolution.getScaledHeight() - 30) - (float) (i * (i1 + 1)) * f, 0.0F);
+                GlStateManager.translate((float)resolution.getScaledWidth() - (float)l * f - 2.0F, (float)(resolution.getScaledHeight() - 30) - (float)(i * (i1 + 1)) * f, 0.0F);
                 GlStateManager.scale(f, f, f);
-                drawRect(-l - 1, -j1 - 1, l + 1, j1 + 1, (int) ((double) k * 0.8D) << 24);
+                drawRect(-l - 1, -j1 - 1, l + 1, j1 + 1, (int)((double)k * 0.8D) << 24);
                 GlStateManager.enableBlend();
-
                 if (!flag) {
                     if (d0 > 0.0D) {
                         this.client.fontRendererObj.drawString(">", l - this.client.fontRendererObj.getStringWidth(">"), -j1, i2 + (k << 24 & -16777216));
@@ -152,7 +207,6 @@ public class GuiSubtitleOverlay extends Gui {
 
                 this.client.fontRendererObj.drawString(s, -k1 / 2, -j1, i2 + (k << 24 & -16777216));
                 GlStateManager.popMatrix();
-                ++i;
             }
 
             GlStateManager.disableBlend();
@@ -161,74 +215,9 @@ public class GuiSubtitleOverlay extends Gui {
     }
 
     private String getName(ResourceLocation location) {
-        String resourcePath = location.getResourcePath();
-        if (resourcePath.equals("mob.creeper.say")) {
-            resourcePath = "entity.creeper.hurt";
-        }
-        if (resourcePath.startsWith("mob.")) {
-            resourcePath = resourcePath.replace("mob.", "entity.");
-        }
-        if (resourcePath.endsWith(".say")) {
-            resourcePath = resourcePath.replace(".say", ".ambient");
-        }
-        if (resourcePath.startsWith("step.")) {
-            resourcePath = "block." + resourcePath.replace("step.", "") + ".step";
-            System.out.println(resourcePath);
-        }
-        if (resourcePath.startsWith("dig.")) {
-            resourcePath = "block." + resourcePath.replace("dig.", "") + ".hit";
-        }
-        if (resourcePath.equalsIgnoreCase("random.pop")) {
-            resourcePath = "entity.item.pickup";
-        }
-        if (resourcePath.endsWith("swim.splash")) {
-            resourcePath = "entity." + resourcePath.split("\\.")[1] + ".splash";
-        }
-        if (resourcePath.endsWith(".swim")) {
-            resourcePath = "entity." + resourcePath.split("\\.")[1] + ".swim";
-        }
-        if (resourcePath.equals("liquid.lavapop")) {
-            resourcePath = "block.lava.pop";
-        }
-        if (resourcePath.startsWith("liquid.")) {
-            resourcePath = "block." + resourcePath.split("\\.")[1] + ".ambient";
-        }
-        if (resourcePath.equals("game.potion.smash")) {
-            resourcePath = "entity.splash_potion.break";
-        }
-        if (resourcePath.startsWith("game.")) {
-            resourcePath = resourcePath.replace("game.", "entity.");
-        }
-        if (resourcePath.startsWith("note.")) {
-            resourcePath = "block." + resourcePath;
-        }
-        if (resourcePath.startsWith("portal.")) {
-            resourcePath = "block." + resourcePath;
-        }
-        if (resourcePath.equals("random.chestopen")) {
-            resourcePath = "block.chest.open";
-        }
-        if (resourcePath.equals("random.chestclosed")) {
-            resourcePath = "block.chest.close";
-        }
-        if (resourcePath.equals("random.bowhit")) {
-            resourcePath = "entity.arrow.hit";
-        }
-        if (resourcePath.equals("random.bow")) {
-            resourcePath = "entity.experience_bottle.throw";
-        }
-
-        if (resourcePath.startsWith("random.anvil")) {
-            resourcePath = "block.anvil." + resourcePath.replace("random.anvil", "").replace("_", "");
-            System.out.println(resourcePath);
-        }
-        if (resourcePath.equals("fire.fire")) {
-            resourcePath = "block.fire.ambient";
-        }
-        if (resourcePath.endsWith(".idle")) {
-            resourcePath = resourcePath.replace(".idle", ".ambient");
-        }
-        String s = soundToSub.get(resourcePath);
+        String s3 = locationToSound.get(location.getResourcePath());
+        if (s3 == null) return location.getResourcePath();
+        String s = soundToSub.get(s3);
         if (s == null)
             return location.getResourcePath();
         String s1 = subToLang.get(s);
@@ -242,21 +231,21 @@ public class GuiSubtitleOverlay extends Gui {
         if (!this.subtitles.isEmpty()) {
             for (GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle : this.subtitles) {
                 if (guisubtitleoverlay$subtitle.getString().equals(s)) {
-                    guisubtitleoverlay$subtitle.refresh(new Vec3d(soundIn.getXPosF(), soundIn.getYPosF(), soundIn.getZPosF()));
+                    guisubtitleoverlay$subtitle.refresh(new Vec3(soundIn.getXPosF(), soundIn.getYPosF(), soundIn.getZPosF()));
                     return;
                 }
             }
         }
-        this.subtitles.add(new Subtitle(s, new Vec3d(soundIn.getXPosF(), soundIn.getYPosF(), soundIn.getZPosF())));
+        this.subtitles.add(new Subtitle(s, new Vec3(soundIn.getXPosF(), soundIn.getYPosF(), soundIn.getZPosF())));
     }
 
     @SideOnly(Side.CLIENT)
     public static class Subtitle {
         private final String subtitle;
         private long startTime;
-        private Vec3d location;
+        private Vec3 location;
 
-        public Subtitle(String subtitleIn, Vec3d locationIn) {
+        public Subtitle(String subtitleIn, Vec3 locationIn) {
             this.subtitle = subtitleIn;
             this.location = locationIn;
             this.startTime = Minecraft.getSystemTime();
@@ -270,11 +259,11 @@ public class GuiSubtitleOverlay extends Gui {
             return this.startTime;
         }
 
-        public Vec3d getLocation() {
+        public Vec3 getLocation() {
             return this.location;
         }
 
-        public void refresh(Vec3d locationIn) {
+        public void refresh(Vec3 locationIn) {
             this.location = locationIn;
             this.startTime = Minecraft.getSystemTime();
         }
