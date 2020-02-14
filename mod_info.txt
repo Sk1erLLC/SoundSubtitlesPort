@@ -1,3 +1,3 @@
-<p>1.8 Sound Subitles backports the accessability feature in Minecraft 1.9+ to 1.8 with some additional enhancments. Due to the nature of the 1.8 game, sounds do not have names. We have mapped the 1.8 sounds to their corresponding 1.9 subtitle names to the best of our abilities. </p>
+<p>1.8 Sound Subtitles backports the accessibility feature in Minecraft 1.9+ to 1.8 with some additional enhancements. Due to the nature of the 1.8 game, sounds do not have names. We have mapped the 1.8 sounds to their corresponding 1.9 subtitle names to the best of our abilities. </p>
 
-<p>This mod can be configured by typing <code>/subtitle_config</code>. From there, you can manage the position, scale, shading of the display, and access toggles for the mod overall and to whether unmapped / unknown sounds show as the sound ID or do not show at all.</p>
+<p>This mod can be configured by typing <code>/subtitle_config</code>. From there, you can manage the position, scale, shading of the display, and access toggles for the mod overall and to whether unmapped/unknown sounds show as the sound ID or do not show at all.</p>
