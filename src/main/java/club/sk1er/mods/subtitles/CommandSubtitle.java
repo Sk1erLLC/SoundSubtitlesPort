@@ -1,28 +1,35 @@
 package club.sk1er.mods.subtitles;
 
 import net.minecraft.command.CommandBase;
-import net.minecraft.command.CommandException;
 import net.minecraft.command.ICommandSender;
 
+import java.util.Arrays;
+import java.util.List;
+
 public class CommandSubtitle extends CommandBase {
-    @Override
-    public boolean canCommandSenderUseCommand(ICommandSender sender) {
-        return true;
-    }
 
     @Override
     public String getCommandName() {
         return "subtitle_config";
-
     }
 
     @Override
     public String getCommandUsage(ICommandSender sender) {
-        return "/subtitle_config";
+        return "/" + getCommandName();
     }
 
     @Override
-    public void processCommand(ICommandSender sender, String[] args) throws CommandException {
+    public void processCommand(ICommandSender sender, String[] args) {
         SubTitleMod.openConfig();
+    }
+
+    @Override
+    public List<String> getCommandAliases() {
+        return Arrays.asList("subs", "subtitles");
+    }
+
+    @Override
+    public int getRequiredPermissionLevel() {
+        return -1;
     }
 }

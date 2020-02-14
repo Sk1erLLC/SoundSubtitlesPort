@@ -1,5 +1,6 @@
 package club.sk1er.mods.subtitles;
 
+import club.sk1er.mods.subtitles.modcore.ModCoreInstaller;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraftforge.client.ClientCommandHandler;
@@ -8,6 +9,7 @@ import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
@@ -39,7 +41,7 @@ public class SubTitleMod {
     }
 
     @EventHandler
-    public void init(FMLPreInitializationEvent event) {
+    public void preInit(FMLPreInitializationEvent event) {
         this.suggestedConfigurationFile = event.getSuggestedConfigurationFile();
         if (suggestedConfigurationFile.exists()) {
             try {
@@ -50,6 +52,7 @@ public class SubTitleMod {
                 y = dataInputStream.readInt();
                 alpha = dataInputStream.readInt();
                 scale = dataInputStream.readFloat();
+                dataInputStream.close();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -59,6 +62,11 @@ public class SubTitleMod {
         ClientCommandHandler.instance.registerCommand(new CommandSubtitle());
         guiSubtitleOverlay = new GuiSubtitleOverlay(Minecraft.getMinecraft());
         MinecraftForge.EVENT_BUS.register(this);
+    }
+
+    @EventHandler
+    public void init(FMLInitializationEvent event) {
+        ModCoreInstaller.initializeModCore(Minecraft.getMinecraft().mcDataDir);
     }
 
     @SubscribeEvent

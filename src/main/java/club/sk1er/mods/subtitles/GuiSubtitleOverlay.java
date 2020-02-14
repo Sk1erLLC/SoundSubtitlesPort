@@ -71,10 +71,10 @@ public class GuiSubtitleOverlay extends Gui {
             Vec3 Vec33 = Vec31.crossProduct(Vec32);
             int lineNumber = 0;
             int boxWidth = 0;
-            Iterator iterator = this.subtitles.iterator();
+            Iterator<Subtitle> iterator = this.subtitles.iterator();
 
             while (iterator.hasNext()) {
-                GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle = (GuiSubtitleOverlay.Subtitle) iterator.next();
+                GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle = iterator.next();
                 if (guisubtitleoverlay$subtitle.getStartTime() + 3000L <= Minecraft.getSystemTime()) {
                     iterator.remove();
                 } else {
@@ -85,8 +85,8 @@ public class GuiSubtitleOverlay extends Gui {
             boxWidth = boxWidth + this.client.fontRendererObj.getStringWidth("<") + this.client.fontRendererObj.getStringWidth(" ") + this.client.fontRendererObj.getStringWidth(">") + this.client.fontRendererObj.getStringWidth(" ");
             int overFlowFac = 1;
             int underFlowFac = 0;
-            for (Iterator var26 = this.subtitles.iterator(); var26.hasNext(); ++lineNumber) {
-                GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle1 = (GuiSubtitleOverlay.Subtitle) var26.next();
+            for (Iterator<Subtitle> var26 = this.subtitles.iterator(); var26.hasNext(); ++lineNumber) {
+                GuiSubtitleOverlay.Subtitle guisubtitleoverlay$subtitle1 = var26.next();
                 int k = 255;
                 String s = guisubtitleoverlay$subtitle1.getString();
                 Vec3 Vec34 = guisubtitleoverlay$subtitle1.getLocation().subtract(Vec3).normalize();
@@ -98,7 +98,7 @@ public class GuiSubtitleOverlay extends Gui {
                 int halfFontHeight = fontHeight / 2;
                 float scale = SubTitleMod.scale;
                 int elementWidth = this.client.fontRendererObj.getStringWidth(s);
-                int l1 = MathHelper.floor_double(MathHelper.denormalizeClamp(255.0D, 75.0D, (double) ((float) (Minecraft.getSystemTime() - guisubtitleoverlay$subtitle1.getStartTime()) / 3000.0F)));
+                int l1 = MathHelper.floor_double(MathHelper.denormalizeClamp(255.0D, 75.0D, (float) (Minecraft.getSystemTime() - guisubtitleoverlay$subtitle1.getStartTime()) / 3000.0F));
                 int i2 = l1 << 16 | l1 << 8 | l1;
                 GlStateManager.pushMatrix();
 
@@ -123,7 +123,7 @@ public class GuiSubtitleOverlay extends Gui {
                 }
                 GlStateManager.translate(x, y + yFac, 0.0F);
                 GlStateManager.scale(scale, scale, scale);
-                drawRect(-halfBoxWidth - 1, -halfFontHeight - 1, halfBoxWidth + 1, halfFontHeight + 1, (int) ((SubTitleMod.alpha) << 24));
+                drawRect(-halfBoxWidth - 1, -halfFontHeight - 1, halfBoxWidth + 1, halfFontHeight + 1, (SubTitleMod.alpha) << 24);
                 GlStateManager.enableBlend();
                 if (!flag) {
                     if (d0 > 0.0D) {
