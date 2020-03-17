@@ -4,13 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import net.minecraft.launchwrapper.Launch;
-import net.minecraft.launchwrapper.LaunchClassLoader;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-
-import javax.swing.JFrame;
-import javax.swing.JProgressBar;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
@@ -30,6 +23,12 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import javax.swing.JFrame;
+import javax.swing.JProgressBar;
+import net.minecraft.launchwrapper.Launch;
+import net.minecraft.launchwrapper.LaunchClassLoader;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 
 public class ModCoreInstaller {
     private static final String VERSION_URL = "https://api.sk1er.club/modcore_versions";

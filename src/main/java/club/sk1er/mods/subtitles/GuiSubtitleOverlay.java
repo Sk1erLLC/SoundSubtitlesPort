@@ -4,6 +4,14 @@ import com.google.common.collect.Lists;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.audio.ISound;
 import net.minecraft.client.gui.Gui;
@@ -14,15 +22,6 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Vec3;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 
 public class GuiSubtitleOverlay extends Gui {
     private final Minecraft client;
@@ -61,7 +60,7 @@ public class GuiSubtitleOverlay extends Gui {
 
     public void renderSubtitles(ScaledResolution resolution) {
 
-        if (SubTitleMod.showSubTitles && !this.subtitles.isEmpty()) {
+        if (SubtitleConfig.showSubtitles && !this.subtitles.isEmpty()) {
             GlStateManager.pushMatrix();
             GlStateManager.enableBlend();
             GlStateManager.tryBlendFuncSeparate(770, 771, 1, 0);
@@ -96,14 +95,14 @@ public class GuiSubtitleOverlay extends Gui {
                 int halfBoxWidth = boxWidth / 2;
                 int fontHeight = this.client.fontRendererObj.FONT_HEIGHT;
                 int halfFontHeight = fontHeight / 2;
-                float scale = SubTitleMod.scale;
+                float scale = SubtitleConfig.scale / 100F;
                 int elementWidth = this.client.fontRendererObj.getStringWidth(s);
                 int l1 = MathHelper.floor_double(MathHelper.denormalizeClamp(255.0D, 75.0D, (float) (Minecraft.getSystemTime() - guisubtitleoverlay$subtitle1.getStartTime()) / 3000.0F));
                 int i2 = l1 << 16 | l1 << 8 | l1;
                 GlStateManager.pushMatrix();
 
-                int x = SubTitleMod.x;
-                int y = SubTitleMod.y;
+                int x = SubtitleConfig.x;
+                int y = SubtitleConfig.y;
                 float xFac = (float) halfBoxWidth * scale - 2.0F;
                 float yFac = (float) (lineNumber * (fontHeight + 1)) * scale + 10;
                 if (x + 2 + xFac > resolution.getScaledWidth()) {
@@ -123,7 +122,7 @@ public class GuiSubtitleOverlay extends Gui {
                 }
                 GlStateManager.translate(x, y + yFac, 0.0F);
                 GlStateManager.scale(scale, scale, scale);
-                drawRect(-halfBoxWidth - 1, -halfFontHeight - 1, halfBoxWidth + 1, halfFontHeight + 1, (SubTitleMod.alpha) << 24);
+                drawRect(-halfBoxWidth - 1, -halfFontHeight - 1, halfBoxWidth + 1, halfFontHeight + 1, (SubtitleConfig.alpha) << 24);
                 GlStateManager.enableBlend();
                 if (!flag) {
                     if (d0 > 0.0D) {
@@ -150,7 +149,7 @@ public class GuiSubtitleOverlay extends Gui {
     public void soundPlay(ISound soundIn) {
         String s = getName(soundIn.getSoundLocation());
         if (s == null) {
-            if (SubTitleMod.showUnknownSounds) s = soundIn.getSoundLocation().getResourcePath();
+            if (SubtitleConfig.showUnknownSubtitles) s = soundIn.getSoundLocation().getResourcePath();
             else return;
         }
         if (s.isEmpty()) return;
