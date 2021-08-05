@@ -1,6 +1,6 @@
 package club.sk1er.mods.subtitles;
 
-import club.sk1er.mods.core.ModCore;
+import gg.essential.api.EssentialAPI;
 import net.minecraft.command.CommandBase;
 import net.minecraft.command.ICommandSender;
 
@@ -21,7 +21,7 @@ public class CommandSubtitle extends CommandBase {
 
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
-        ModCore.getInstance().getGuiHandler().open(new GuiConfig());
+        EssentialAPI.getGuiUtil().openScreen(new GuiConfig());
     }
 
     @Override
