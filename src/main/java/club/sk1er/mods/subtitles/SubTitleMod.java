@@ -1,17 +1,15 @@
 package club.sk1er.mods.subtitles;
 
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraft.client.gui.ScaledResolution;
 import net.minecraftforge.client.ClientCommandHandler;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.sound.PlaySoundEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.Mod.EventHandler;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-
-import static net.minecraftforge.client.event.RenderGameOverlayEvent.ElementType.CHAT;
 
 @Mod(modid = SubTitleMod.MODID, version = SubTitleMod.VERSION)
 public class SubTitleMod {
@@ -30,11 +28,13 @@ public class SubTitleMod {
         guiSubtitleOverlay = new GuiSubtitleOverlay(Minecraft.getMinecraft());
         MinecraftForge.EVENT_BUS.register(this);
     }
-
+    
     @SubscribeEvent
-    public void gameOverlay(RenderGameOverlayEvent event) {
-        if (event.type == CHAT) {
-            guiSubtitleOverlay.renderSubtitles(new ScaledResolution(Minecraft.getMinecraft()));
+    public void onGameOverlayRendered(RenderGameOverlayEvent.Post event) {
+        if (event.type == RenderGameOverlayEvent.ElementType.ALL) {
+            if (Minecraft.getMinecraft().thePlayer != null) {
+                guiSubtitleOverlay.renderSubtitles(event.resolution);
+            }
         }
     }
 
