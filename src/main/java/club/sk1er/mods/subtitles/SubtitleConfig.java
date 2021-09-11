@@ -9,7 +9,7 @@ import java.io.File;
 public class SubtitleConfig extends Vigilant {
 
     @Property(
-            type = PropertyType.SWITCH,
+            type = PropertyType.SLIDER,
             name = "Subtitle X",
             category = "Subtitles",
             subcategory = "Subtitle Pos",
@@ -18,7 +18,7 @@ public class SubtitleConfig extends Vigilant {
     public static int x = 5;
 
     @Property(
-            type = PropertyType.SWITCH,
+            type = PropertyType.SLIDER,
             name = "Subtitle Y",
             category = "Subtitles",
             subcategory = "Subtitle Pos",
@@ -27,7 +27,7 @@ public class SubtitleConfig extends Vigilant {
     public static int y = 5;
 
     @Property(
-            type = PropertyType.SWITCH,
+            type = PropertyType.SLIDER,
             name = "Subtitle Alpha",
             category = "Subtitles",
             subcategory = "Subtitle Color",
@@ -36,7 +36,7 @@ public class SubtitleConfig extends Vigilant {
     public static int alpha = 200;
 
     @Property(
-            type = PropertyType.SWITCH,
+            type = PropertyType.SLIDER,
             name = "Subtitle Scale",
             category = "Subtitles",
             subcategory = "Subtitle Scale",
