@@ -4,7 +4,7 @@
   "name": "Backported Subtitles",
   "description": "Backports the 1.9 subtitle accessibility feature to 1.8.",
   "version": "${version}",
-  "mcversion": "${mcversion}",
+  "mcversion": "${mcVersionStr}",
   "url": "",
   "updateUrl": "",
   "authorList": ["Sk1er"],
